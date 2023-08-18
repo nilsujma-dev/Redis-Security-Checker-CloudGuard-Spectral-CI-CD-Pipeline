@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     environment {
+        // Use Jenkins credentials binding
         CHKP_CLOUDGUARD_ID = credentials('chkp-cloudguard-id')
         CHKP_CLOUDGUARD_SECRET = credentials('chkp-cloudguard-secret')
         SHIFTLEFT_REGION = "eu1"
         SPECTRAL_DSN = credentials('spectral-dsn')
-        ACR_NAME = 'aksk8sreg'  // Assuming this is the name of your ACR
     }
 
     stages {
@@ -74,21 +74,25 @@ pipeline {
                     string(credentialsId: 'azure-password', variable: 'PASSWORD'),
                     string(credentialsId: 'azure-tenant-id', variable: 'TENANT_ID')
                 ]) {
-                    sh '''
-                        az acr login --name $ACR_NAME
-                    '''
+                    script {
+                        sh """
+                            az login --service-principal -u $APP_ID -p $PASSWORD --tenant $TENANT_ID
+                            az acr login --name aksk8sreg
+                        """
+                    }
                 }
             }
         }
 
         stage('Push Image to ACR') {
             steps {
-                sh '''
-                    docker tag nilsujma/redis:latest $ACR_NAME.azurecr.io/nilsujma/redis:latest
-                    docker push $ACR_NAME.azurecr.io/nilsujma/redis:latest
-                '''
+                script {
+                    sh """
+                        docker tag nilsujma/redis:latest aksk8sreg.azurecr.io/nilsujma/redis:latest
+                        docker push aksk8sreg.azurecr.io/nilsujma/redis:latest
+                    """
+                }
             }
         }
     }
 }
-
