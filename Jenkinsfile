@@ -94,5 +94,22 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to AKS') {
+            steps {
+                script {
+                    // Login to AKS
+                    sh """
+                        az aks get-credentials --resource-group aks-k8s-cluster_group --name aks-k8s-cluster
+                    """
+                
+                    // Apply the Kubernetes configurations to deploy the image
+                    sh """
+                        kubectl apply -f deployment.yaml
+                        kubectl apply -f service.yaml
+                    """
+                }
+            }
+        }
     }
 }
